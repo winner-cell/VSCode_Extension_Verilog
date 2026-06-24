@@ -1,69 +1,47 @@
-# verilog-testbench-instance README
+# Verilog Testbench & Instance
 
-This extension "verilog-testbench-instance" can be used to enhance verilog programming capability. 
+Generate Verilog module instances and testbenches directly from your Verilog source — no external dependencies required.
+
+> **Minimum VS Code version: 1.23.0**
 
 ## Features
 
-It includes two command, Testbench(generate testbench for verilog module in active editor) and Instance(generate instance for verilog module in active editor).
+Two commands are available via `Ctrl+Shift+P`:
 
-For example if there is active editor of verilog module, you press ctrl+ shift + p to select command:
+- **Testbench** — generates a complete testbench module from the active `.v` file and opens it in a new editor tab.
+- **Instance** — generates a module instantiation template and inserts it at the cursor position in the active editor.
 
-![image](https://github.com/truecrab/VSCode_Extension_Verilog/raw/master/images/fig1.png)
-
-It will generate the testbench in a new terminal.
-
-![image](https://github.com/truecrab/VSCode_Extension_Verilog/raw/master/images/fig2.png)
-
+![command palette](https://github.com/truecrab/VSCode_Extension_Verilog/raw/master/images/fig1.png)
 
 ## Requirements
 
-It need **python3** environment.
+- **VS Code `>= 1.23.0`** (required — the extension will not install on older versions)
+- No other external dependencies (Python is **not** required)
 
-## Extension Settings
+## Usage
 
-This extension contributes the following settings:
-
-* `Testbench`: generate testbench for verilog module in active editor
-* `Instance`: generate instance for verilog module in active editor
+1. Open a Verilog (`.v`) file in the editor.
+2. Press `Ctrl+Shift+P` and select **Instance** or **Testbench**.
+3. The generated code is inserted directly into your editor — no terminal interaction needed.
 
 ## Known Issues
 
-* `Install failed`: If you failed to install this extension, you may be update your vscode to version 1.23.
-
-It is not known what the other issues are.
+- If installation fails, make sure your VS Code version is 1.23 or newer.
 
 ## Release Notes
 
-The github address: https://github.com/truecrab/VSCode_Extension_Verilog
+### 1.0.6
+
+Removed Python dependency. The extension is now self-contained (pure TypeScript). Instance command inserts code at cursor; Testbench command opens a new editor tab.
+
+### 1.0.5
+
+Fixed file encoding handling for Chinese (GBK) encoded Verilog files.
 
 ### 1.0.0
 
-2018/05/07
-The initial version.
-It can generate testbench and instance for verilog module.
+Initial release (2018/05/07). Generate testbench and instance for Verilog modules.
 
-### 1.0.1
-
-2018/05/07
-Fixed README.md.
-
-### 1.0.2
-
-2018/05/07
-Fixed README.md to display figure.
-
-### 1.0.3
-
-2018/05/07
-Delete out in .gitignore for upload out folder.
-
-### 1.0.5
-2018/05/08
-Modify the file open operation to fixed decoding problem in China.
-
------------------------------------------------------------------------------------------------------------
-
-## Other
-
+---
 
 **Enjoy!**

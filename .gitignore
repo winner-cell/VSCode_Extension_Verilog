@@ -1,8 +1,4 @@
 node_modules
 .vscode-test/
 *.vsix
-
-# Python
-.venv/
-__pycache__/
-*.pyc
+.claude/

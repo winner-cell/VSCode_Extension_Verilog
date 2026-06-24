@@ -1,9 +1,10 @@
 {
     "name": "verilog-testbench-instance",
-    "displayName": "Verilog_Testbench",
-    "description": "verilog-testbench-instance",
+    "displayName": "Verilog Testbench & Instance",
+    "description": "Generate Verilog module instances and testbenches from source — no external dependencies",
     "version": "0.0.5",
-    "publisher": "Truecrab",
+    "publisher": "wincell",
+    "repository": "https://github.com/truecrab/VSCode_Extension_Verilog",
     "engines": {
         "vscode": "^1.23.0"
     },
@@ -37,13 +38,15 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
-        "test": "npm run compile && node ./out/test/index"
+        "test": "npm run compile && node ./out/test/index",
+        "package": "vsce package"
     },
     "devDependencies": {
         "@types/glob": "^7.1.0",
         "@types/mocha": "^5.2.0",
         "@types/node": "^16.0.0",
         "@types/vscode": "^1.23.0",
+        "@vscode/vsce": "^3.9.2",
         "glob": "^7.1.2",
         "mocha": "^5.2.0",
         "tslint": "^5.8.0",
