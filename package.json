@@ -2,7 +2,7 @@
     "name": "verilog-testbench-instance",
     "displayName": "Verilog Testbench & Instance",
     "description": "Generate Verilog module instances and testbenches from source — no external dependencies",
-    "version": "0.0.5",
+    "version": "1.0.6",
     "publisher": "wincell",
     "repository": "https://github.com/truecrab/VSCode_Extension_Verilog",
     "engines": {

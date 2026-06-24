@@ -2,6 +2,8 @@
 
 Generate Verilog module instances and testbenches directly from your Verilog source — no external dependencies required.
 
+> Forked from [truecrab/VSCode_Extension_Verilog](https://github.com/truecrab/VSCode_Extension_Verilog). Rewritten in pure TypeScript, removing the original Python dependency.
+
 > **Minimum VS Code version: 1.23.0**
 
 ## Features
