@@ -1,47 +1,48 @@
-'use strict';
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+const verilogParser_1 = require("./verilogParser");
 function activate(context) {
-    // Use the console to output diagnostic information (console.log) and errors (console.error)
-    // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "verilog-testbench-instance" is now active!');
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with  registerCommand
-    // The commandId parameter must match the command field in package.json
-    let disposable = vscode.commands.registerCommand('extension.instance', () => {
-        // The code can get the document name and then it activates python code to generate instance
-        let editor = vscode.window.activeTextEditor;
+    const instanceCmd = vscode.commands.registerCommand('extension.instance', () => {
+        const editor = vscode.window.activeTextEditor;
         if (!editor) {
+            vscode.window.showErrorMessage('No active editor');
             return;
         }
-        let ter1 = vscode.window.createTerminal({ name: 'instance' });
-        ter1.show(true);
-        ter1.sendText(`python ${__dirname}\\vInstance_Gen.py ${editor.document.fileName}`);
-        // Display a message box to the user
-        vscode.window.showInformationMessage('Generate instance successfully!');
+        const filePath = editor.document.fileName;
+        try {
+            const code = (0, verilogParser_1.generateInstance)(filePath);
+            editor.edit(eb => {
+                eb.insert(editor.selection.active, code);
+            });
+            vscode.window.showInformationMessage('Generate instance successfully!');
+        }
+        catch (e) {
+            vscode.window.showErrorMessage(`Failed to generate instance: ${e}`);
+        }
     });
-    context.subscriptions.push(disposable);
-    let testbench = vscode.commands.registerCommand('extension.testbench', () => {
-        // The code can get the document name and then it activates python code to generate testbench
-        let editor = vscode.window.activeTextEditor;
+    const testbenchCmd = vscode.commands.registerCommand('extension.testbench', () => {
+        const editor = vscode.window.activeTextEditor;
         if (!editor) {
+            vscode.window.showErrorMessage('No active editor');
             return;
         }
-        let ter1 = vscode.window.createTerminal({ name: 'testbench' });
-        ter1.show(true);
-        ter1.sendText(`python ${__dirname}\\vTbgenerator.py ${editor.document.fileName}`);
-        // Display a message box to the user
-        vscode.window.showInformationMessage('Generate testbench successfully!');
+        const filePath = editor.document.fileName;
+        try {
+            const code = (0, verilogParser_1.generateTestbench)(filePath);
+            vscode.workspace.openTextDocument({ content: code, language: 'verilog' }).then(doc => {
+                vscode.window.showTextDocument(doc);
+            });
+            vscode.window.showInformationMessage('Generate testbench successfully!');
+        }
+        catch (e) {
+            vscode.window.showErrorMessage(`Failed to generate testbench: ${e}`);
+        }
     });
-    context.subscriptions.push(testbench);
+    context.subscriptions.push(instanceCmd, testbenchCmd);
 }
 exports.activate = activate;
-// this method is called when your extension is deactivated
-function deactivate() {
-}
+function deactivate() { }
 exports.deactivate = deactivate;
 //# sourceMappingURL=extension.js.map

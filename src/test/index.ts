@@ -10,13 +10,33 @@
 // to report the results back to the caller. When the tests are finished, return
 // a possible error to the callback or null if none.
 
-import * as testRunner from 'vscode/lib/testrunner';
+import * as Mocha from 'mocha';
+import * as glob from 'glob';
+import * as path from 'path';
 
-// You can directly control Mocha options by uncommenting the following lines
-// See https://github.com/mochajs/mocha/wiki/Using-mocha-programmatically#set-options for more info
-testRunner.configure({
-    ui: 'tdd', 		// the TDD UI is being used in extension.test.ts (suite, test, etc.)
-    useColors: true // colored output from test results
-});
+export function run(testsRoot: string, clb: (error: Error | null) => void): void {
+    const mocha = new Mocha({
+        ui: 'tdd',
+        useColors: true
+    });
 
-module.exports = testRunner;
+    glob('**/**.test.js', { cwd: testsRoot }, (err: Error | null, files: string[]) => {
+        if (err) {
+            return clb(err);
+        }
+
+        files.forEach((f: string) => mocha.addFile(path.resolve(testsRoot, f)));
+
+        try {
+            mocha.run(failures => {
+                if (failures > 0) {
+                    clb(new Error(`${failures} tests failed.`));
+                } else {
+                    clb(null);
+                }
+            });
+        } catch (e) {
+            clb(e as Error);
+        }
+    });
+}

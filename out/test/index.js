@@ -11,12 +11,34 @@
 // to report the results back to the caller. When the tests are finished, return
 // a possible error to the callback or null if none.
 Object.defineProperty(exports, "__esModule", { value: true });
-const testRunner = require("vscode/lib/testrunner");
-// You can directly control Mocha options by uncommenting the following lines
-// See https://github.com/mochajs/mocha/wiki/Using-mocha-programmatically#set-options for more info
-testRunner.configure({
-    ui: 'tdd',
-    useColors: true // colored output from test results
-});
-module.exports = testRunner;
+exports.run = void 0;
+const Mocha = require("mocha");
+const glob = require("glob");
+const path = require("path");
+function run(testsRoot, clb) {
+    const mocha = new Mocha({
+        ui: 'tdd',
+        useColors: true
+    });
+    glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
+        if (err) {
+            return clb(err);
+        }
+        files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
+        try {
+            mocha.run(failures => {
+                if (failures > 0) {
+                    clb(new Error(`${failures} tests failed.`));
+                }
+                else {
+                    clb(null);
+                }
+            });
+        }
+        catch (e) {
+            clb(e);
+        }
+    });
+}
+exports.run = run;
 //# sourceMappingURL=index.js.map
