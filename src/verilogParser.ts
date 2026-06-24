@@ -3,7 +3,7 @@ import * as iconv from 'iconv-lite';
 
 // ── file reading ──────────────────────────────────────────────
 
-function readVerilogFile(filePath: string): string {
+export function readVerilogFile(filePath: string): string {
     const buf = fs.readFileSync(filePath);
     for (const enc of ['utf-8', 'gbk', 'latin1']) {
         try {
@@ -34,6 +34,42 @@ function delBlock(text: string): string {
 
 // ── module parsing ────────────────────────────────────────────
 
+export interface PortEntry {
+    name: string;
+    range: string;
+}
+
+export interface ParaKV {
+    name: string;
+    value: string;
+}
+
+export interface ModuleInfo {
+    name: string;
+    paras: ParaKV[];
+    inputs: PortEntry[];
+    outputs: PortEntry[];
+    inouts: PortEntry[];
+}
+
+export function parseModule(filePath: string): ModuleInfo {
+    let text = readVerilogFile(filePath);
+    text = delComment(text);
+    text = delBlock(text);
+
+    const moBegin = text.search(/(?:^|\b)module\b/);
+    const moEnd = text.search(/\bendmodule\b/);
+    text = text.slice(moBegin + 'module'.length, moEnd);
+
+    const name = findName(text);
+    const paras = parseParaKVs(paraDeclare(text));
+    const inputs = portDeclare(text, 'input');
+    const outputs = portDeclare(text, 'output');
+    const inouts = portDeclare(text, 'inout');
+
+    return { name, paras, inputs, outputs, inouts };
+}
+
 function findName(text: string): string {
     const m = /([a-zA-Z_][a-zA-Z_0-9]*)\s*/.exec(text);
     if (!m) { throw new Error('Cannot find module name'); }
@@ -45,9 +81,14 @@ function paraDeclare(text: string): string[] {
     return text.match(re) || [];
 }
 
-interface PortEntry {
-    name: string;
-    range: string;
+function parseParaKVs(paraLines: string[]): ParaKV[] {
+    const joined = paraLines.join('\n');
+    const re = /([a-zA-Z_][a-zA-Z_0-9]*)\s*=\s*([\w\W]*?)\s*[;,)]/g;
+    const result: ParaKV[] = [];
+    for (const m of joined.matchAll(re)) {
+        result.push({ name: m[1], value: m[2] });
+    }
+    return result;
 }
 
 function portDeclare(text: string, portDir: string): PortEntry[] {
@@ -76,23 +117,11 @@ function portDeclare(text: string, portDir: string): PortEntry[] {
 
 // ── formatting helpers ────────────────────────────────────────
 
-function ljust(s: string, n: number): string {
+export function ljust(s: string, n: number): string {
     return s.length >= n ? s : s + ' '.repeat(n - s.length);
 }
 
-interface ParaKV { name: string; value: string; }
-
-function parseParaKVs(paraLines: string[]): ParaKV[] {
-    const joined = paraLines.join('\n');
-    const re = /([a-zA-Z_][a-zA-Z_0-9]*)\s*=\s*([\w\W]*?)\s*[;,)]/g;
-    const result: ParaKV[] = [];
-    for (const m of joined.matchAll(re)) {
-        result.push({ name: m[1], value: m[2] });
-    }
-    return result;
-}
-
-function formatParaDecl(paras: ParaKV[]): string {
+export function formatParaDecl(paras: ParaKV[]): string {
     if (paras.length === 0) { return ''; }
     const l1 = Math.max(...paras.map(p => p.name.length));
     const l2 = Math.max(...paras.map(p => p.value.length));
@@ -101,7 +130,7 @@ function formatParaDecl(paras: ParaKV[]): string {
     ).join('\n');
 }
 
-function formatPortMap(portGroups: PortEntry[][], withRange: boolean): string {
+export function formatPortMap(portGroups: PortEntry[][], withRange: boolean): string {
     const all = portGroups.flat();
     if (all.length === 0) { return ''; }
 
@@ -125,7 +154,7 @@ function formatPortMap(portGroups: PortEntry[][], withRange: boolean): string {
     return blocks.join(',\n\n');
 }
 
-function formatPortDecl(ports: PortEntry[], type: string, initial: string = ''): string {
+export function formatPortDecl(ports: PortEntry[], type: string, initial: string = ''): string {
     if (ports.length === 0) { return ''; }
     return ports.map(p => {
         const init = initial ? ` = ${initial}` : '';
@@ -133,139 +162,4 @@ function formatPortDecl(ports: PortEntry[], type: string, initial: string = ''):
         const decl = ljust(`${p.range}${spacer}${p.name}`, 36) + init;
         return `${ljust(type, 4)}  ${decl} ;`;
     }).join('\n');
-}
-
-// ── output generators ─────────────────────────────────────────
-
-export function generateInstance(filePath: string): string {
-    let text = readVerilogFile(filePath);
-    text = delComment(text);
-    text = delBlock(text);
-
-    const moBegin = text.search(/(?:^|\b)module\b/);
-    const moEnd = text.search(/\bendmodule\b/);
-    text = text.slice(moBegin + 'module'.length, moEnd);
-
-    const name = findName(text);
-    const paras = parseParaKVs(paraDeclare(text));
-    const inputs = portDeclare(text, 'input');
-    const outputs = portDeclare(text, 'output');
-    const inouts = portDeclare(text, 'inout');
-
-    const lines: string[] = [];
-
-    if (paras.length > 0) {
-        lines.push(`// ${name} Parameters`);
-        lines.push(formatParaDecl(paras));
-        lines.push('');
-    }
-
-    lines.push(`// ${name} Inputs`);
-    lines.push(formatPortDecl(inputs, 'reg'));
-    lines.push('');
-
-    lines.push(`// ${name} Outputs`);
-    lines.push(formatPortDecl(outputs, 'wire'));
-    if (inouts.length > 0) {
-        lines.push('');
-        lines.push(`// ${name} Bidirs`);
-        lines.push(formatPortDecl(inouts, 'wire'));
-    }
-    lines.push('');
-
-    // instance parameter overrides use value
-    let paraDef = '';
-    if (paras.length > 0) {
-        const l1 = Math.max(...paras.map(p => p.name.length));
-        const l2 = Math.max(...paras.map(p => p.value.length));
-        paraDef = '#(\n' + paras.map(p =>
-            `    .${ljust(p.name, l1 + 1)}( ${ljust(p.value, l2)} )`
-        ).join(',\n') + ')\n';
-    }
-
-    const portMap = formatPortMap([inputs, outputs, inouts], false);
-    lines.push(`${name} ${paraDef}u_${name} (\n${portMap}\n);`);
-
-    return lines.join('\n');
-}
-
-export function generateTestbench(filePath: string): string {
-    let text = readVerilogFile(filePath);
-    text = delComment(text);
-    text = delBlock(text);
-
-    const moBegin = text.search(/(?:^|\b)module\b/);
-    const moEnd = text.search(/\bendmodule\b/);
-    text = text.slice(moBegin + 'module'.length, moEnd);
-
-    const name = findName(text);
-    const paras = parseParaKVs(paraDeclare(text));
-    const inputs = portDeclare(text, 'input');
-    const outputs = portDeclare(text, 'output');
-    const inouts = portDeclare(text, 'inout');
-
-    const lines: string[] = [];
-
-    lines.push('//~ `New testbench');
-    lines.push('`timescale  1ns / 1ps');
-    lines.push('');
-    lines.push(`module tb_${name};`);
-    lines.push('');
-
-    // parameters
-    const allParas = [
-        { name: 'PERIOD', value: '10' },
-        ...paras,
-    ];
-    lines.push(`// ${name} Parameters`);
-    lines.push(formatParaDecl(allParas));
-    lines.push('');
-
-    // ports
-    lines.push(`// ${name} Inputs`);
-    lines.push(formatPortDecl(inputs, 'reg', '0'));
-    lines.push('');
-    lines.push(`// ${name} Outputs`);
-    lines.push(formatPortDecl(outputs, 'wire'));
-    if (inouts.length > 0) {
-        lines.push('');
-        lines.push(`// ${name} Bidirs`);
-        lines.push(formatPortDecl(inouts, 'wire'));
-    }
-    lines.push('');
-
-    // clock & reset
-    lines.push(`initial
-begin
-    forever #(PERIOD/2)  clk=~clk;
-end`);
-
-    lines.push(`initial
-begin
-    #(PERIOD*2) rst_n  =  1;
-end`);
-    lines.push('');
-
-    // instance parameter overrides use name
-    let paraDef = '';
-    if (paras.length > 0) {
-        const l1 = Math.max(...paras.map(p => p.name.length));
-        paraDef = '#(\n' + paras.map(p =>
-            `    .${ljust(p.name, l1 + 1)}( ${ljust(p.name, l1)} )`
-        ).join(',\n') + ')\n';
-    }
-
-    const portMap = formatPortMap([inputs, outputs, inouts], true);
-    lines.push(`${name} ${paraDef}u_${name} (\n${portMap}\n);`);
-    lines.push('');
-
-    lines.push(`initial
-begin
-
-    $finish;
-end`);
-    lines.push('');
-    lines.push('endmodule');
-
-    return lines.join('\n');
 }

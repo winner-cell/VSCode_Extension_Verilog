@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
-import { generateInstance, generateTestbench } from './verilogParser';
+import { parseModule } from './verilogParser';
+import { generateInstance } from './vInstance_Gen';
+import { generateTestbench } from './vTbgenerator';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -9,9 +11,9 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.showErrorMessage('No active editor');
             return;
         }
-        const filePath = editor.document.fileName;
         try {
-            const code = generateInstance(filePath);
+            const info = parseModule(editor.document.fileName);
+            const code = generateInstance(info);
             editor.edit(eb => {
                 eb.insert(editor.selection.active, code);
             });
@@ -27,9 +29,9 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.showErrorMessage('No active editor');
             return;
         }
-        const filePath = editor.document.fileName;
         try {
-            const code = generateTestbench(filePath);
+            const info = parseModule(editor.document.fileName);
+            const code = generateTestbench(info);
             vscode.workspace.openTextDocument({ content: code, language: 'verilog' }).then(doc => {
                 vscode.window.showTextDocument(doc);
             });

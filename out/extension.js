@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
 const verilogParser_1 = require("./verilogParser");
+const vInstance_Gen_1 = require("./vInstance_Gen");
+const vTbgenerator_1 = require("./vTbgenerator");
 function activate(context) {
     const instanceCmd = vscode.commands.registerCommand('extension.instance', () => {
         const editor = vscode.window.activeTextEditor;
@@ -10,9 +12,9 @@ function activate(context) {
             vscode.window.showErrorMessage('No active editor');
             return;
         }
-        const filePath = editor.document.fileName;
         try {
-            const code = (0, verilogParser_1.generateInstance)(filePath);
+            const info = (0, verilogParser_1.parseModule)(editor.document.fileName);
+            const code = (0, vInstance_Gen_1.generateInstance)(info);
             editor.edit(eb => {
                 eb.insert(editor.selection.active, code);
             });
@@ -28,9 +30,9 @@ function activate(context) {
             vscode.window.showErrorMessage('No active editor');
             return;
         }
-        const filePath = editor.document.fileName;
         try {
-            const code = (0, verilogParser_1.generateTestbench)(filePath);
+            const info = (0, verilogParser_1.parseModule)(editor.document.fileName);
+            const code = (0, vTbgenerator_1.generateTestbench)(info);
             vscode.workspace.openTextDocument({ content: code, language: 'verilog' }).then(doc => {
                 vscode.window.showTextDocument(doc);
             });
@@ -45,4 +47,3 @@ function activate(context) {
 exports.activate = activate;
 function deactivate() { }
 exports.deactivate = deactivate;
-//# sourceMappingURL=extension.js.map
