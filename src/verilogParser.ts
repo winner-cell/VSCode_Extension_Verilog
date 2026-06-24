@@ -22,7 +22,7 @@ export function readVerilogFile(filePath: string): string {
 
 function delComment(text: string): string {
     return text
-        .replace(/\/\*(.*?)\*\//gs, '\n')
+        .replace(/\/\*([\s\S]*?)\*\//g, '\n')
         .replace(/\/\/.*$/gm, '\n');
 }
 
@@ -97,18 +97,18 @@ function portDeclare(text: string, portDir: string): PortEntry[] {
         '(\\s+(?:wire|reg)\\s+)*' +
         '(\\s*signed\\s+)*' +
         '(\\s*\\[.*?:.*?\\]\\s*)*' +
-        '(?<port_list>.*?)' +
+        '([\\s\\S]*?)' +
         '(?=\\binput\\b|\\boutput\\b|\\binout\\b|;|\\))',
-        'gs'
+        'g'
     );
 
     const result: PortEntry[] = [];
     for (const m of text.matchAll(re)) {
         const range = (m[3] || '').trim();
-        const portList = m.groups!.port_list;
+        const portList = m[4];
         const ports = portList.split(',').map(s => s.trim()).filter(s => s !== '');
         for (const p of ports) {
-            const name = p.replace(/\s*=.*/s, '').trim();
+            const name = p.replace(/\s*=[\s\S]*/, '').trim();
             result.push({ name, range });
         }
     }

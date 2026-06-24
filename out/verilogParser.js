@@ -23,7 +23,7 @@ exports.readVerilogFile = readVerilogFile;
 // ── comment / block removal ───────────────────────────────────
 function delComment(text) {
     return text
-        .replace(/\/\*(.*?)\*\//gs, '\n')
+        .replace(/\/\*([\s\S]*?)\*\//g, '\n')
         .replace(/\/\/.*$/gm, '\n');
 }
 function delBlock(text) {
@@ -71,15 +71,15 @@ function portDeclare(text, portDir) {
         '(\\s+(?:wire|reg)\\s+)*' +
         '(\\s*signed\\s+)*' +
         '(\\s*\\[.*?:.*?\\]\\s*)*' +
-        '(?<port_list>.*?)' +
-        '(?=\\binput\\b|\\boutput\\b|\\binout\\b|;|\\))', 'gs');
+        '([\\s\\S]*?)' +
+        '(?=\\binput\\b|\\boutput\\b|\\binout\\b|;|\\))', 'g');
     const result = [];
     for (const m of text.matchAll(re)) {
         const range = (m[3] || '').trim();
-        const portList = m.groups.port_list;
+        const portList = m[4];
         const ports = portList.split(',').map(s => s.trim()).filter(s => s !== '');
         for (const p of ports) {
-            const name = p.replace(/\s*=.*/s, '').trim();
+            const name = p.replace(/\s*=[\s\S]*/, '').trim();
             result.push({ name, range });
         }
     }

@@ -11,5 +11,6 @@ tslint.json
 .vscodeignore
 .git/**
 *.py
+changelog.md
 debug_regex.js
 test_fifo.v
