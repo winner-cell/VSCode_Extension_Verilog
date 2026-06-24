@@ -26,7 +26,6 @@ Usage:
 
 import re
 import sys
-import chardet
 
 def delComment( Text ):
     """ removed comment """
@@ -135,13 +134,18 @@ def formatPara(ParaList) :
                     + '( '+ i[1].ljust(l2 )+' )' for i in p])+ ')\n'
     return paraDec,paraDef
 
+def read_verilog_file(filepath):
+    for enc in ['utf-8', 'gbk', 'latin-1']:
+        try:
+            with open(filepath, 'r', encoding=enc) as f:
+                return f.read()
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+    raise RuntimeError(f"Failed to read {filepath} with any supported encoding")
+
 def writeTestBench(input_file):
     """ write testbench to file """
-    with open(input_file, 'rb') as f:
-        f_info =  chardet.detect(f.read())
-        f_encoding = f_info['encoding']
-    with open(input_file, encoding=f_encoding) as inFile:
-        inText  = inFile.read()
+    inText = read_verilog_file(input_file)
 
     # removed comment,task,function
     inText = delComment(inText)
